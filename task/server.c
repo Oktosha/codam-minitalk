@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/17 22:51:11 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/18 15:48:45 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/18 20:22:50 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,20 +15,16 @@
 #include <stdio.h>
 #include <unistd.h>
 
-volatile sig_atomic_t	G_signal = 0;
-volatile sig_atomic_t	G_pid = 0;
-volatile sig_atomic_t	received_sigs = 0;
-volatile sig_atomic_t	handled_sigs = 0;
+#include "server.h"
 
-void handler(int sig, siginfo_t *info, void *uap)
+volatile sig_atomic_t	g_message = 0;
+
+void	handler(int sig, siginfo_t *info, void *uap)
 {
-	received_sigs += 1;
-	if ((!G_signal) && (!G_pid || G_pid == info->si_pid))
-	{
-		handled_sigs += 1;
-		G_signal = sig;
-		G_pid = info->si_pid;
-	}
+	if (!is_error(g_message) \
+		&& (is_clear(g_message) \
+		|| (get_sender(g_message) == info->si_pid && !get_signal(g_message))))
+		g_message = encode_message(info->si_pid, sig);
 }
 
 void add_handler(int sig_to_set, int sig_to_ignore)
@@ -41,6 +37,11 @@ void add_handler(int sig_to_set, int sig_to_ignore)
 	sigaction(sig_to_set, &action, NULL);
 }
 
+int is_finished(int pos)
+{
+	return pos >= 10000;
+}
+
 int main()
 {
 	printf("%d\n", getpid());
@@ -48,30 +49,40 @@ int main()
 	add_handler(SIGUSR2, SIGUSR1);
 	int sent_back = 0;
 	int wait_cnt = 0;
-	int cnt = 0;
-	while(cnt < 1000000000) {
-		if (G_signal)
-		{
-			sent_back += 1;
-			int tmp_signal = G_signal;
-			G_signal = 0;
-			kill(G_pid, tmp_signal);
-			wait_cnt = 0;
-		}
-		else if (G_pid)
-		{
-			wait_cnt += 1;
-		}
+	int pos = 0;
+	while(1) {
 		usleep(50);
-		if (wait_cnt > 1000 && G_pid)
+		int message = g_message;
+		int client_pid = get_sender(message);
+		int signal = get_signal(message);
+		if (is_error(message))
 		{
-			printf("disconnecting from client %d\n", G_pid);
-			G_pid = 0;
+			printf("message is error\n");
+			break;
+		}
+		if (get_signal(message))
+		{
+			pos += 1;
+			g_message = encode_message(client_pid, 0);
+			wait_cnt = 0;
+			kill(client_pid, SIGUSR1);
+		}
+		if (is_finished(pos))
+		{
+			printf("got %d bits from %d\n", pos, client_pid);
+			pos = 0;
+			g_message = 0;
 			wait_cnt = 0;
 		}
-		cnt += 1;
-		if (cnt % 10000 == 0)
-			printf("pid: %d signal: %d wait: %d\n", G_pid, G_signal, wait_cnt);
-
+		if (get_sender(message))
+			wait_cnt += 1;
+		if (wait_cnt > 1000)
+		{
+			int client_pid = get_sender(message);
+			printf("disconnecting from %d\n", client_pid);
+			pos = 0;
+			g_message = 0;
+			wait_cnt = 0;
+		}
 	}
 }
