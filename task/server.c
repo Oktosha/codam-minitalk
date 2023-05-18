@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/17 22:51:11 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/18 01:48:33 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/18 15:48:45 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,8 +54,8 @@ int main()
 		{
 			sent_back += 1;
 			int tmp_signal = G_signal;
+			G_signal = 0;
 			kill(G_pid, tmp_signal);
-			G_signal  = 0;
 			wait_cnt = 0;
 		}
 		else if (G_pid)
