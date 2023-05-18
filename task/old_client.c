@@ -1,78 +1,82 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   client.c                                           :+:    :+:            */
+/*   old_client.c                                       :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
-/*   Created: 2023/05/18 21:06:37 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/18 21:26:28 by dkolodze      ########   odam.nl         */
+/*   Created: 2023/05/17 21:41:57 by dkolodze      #+#    #+#                 */
+/*   Updated: 2023/05/18 21:06:43 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <time.h>
 #include <unistd.h>
 
+#define DEFAULT_CNT 1000
+
 volatile sig_atomic_t waiting = 0;
+int pid = -1;
 
 void handler(int signal, siginfo_t *info, void *uap)
 {
-	if (waiting == info->si_pid)
-		waiting = 0;
-	else
-		waiting = -1;
-}
-
-int get_bit(const char *data, int bit_pos)
-{
-	char	byte;
-	int		bit;
-
-	byte = data[bit_pos / 8];
-	bit = (1 << (bit_pos % 8)) & byte;
-	bit = bit >> (bit_pos % 8);
-	return (bit);
+	waiting = 0;
 }
 
 int main(int argc, char**argv)
 {
-	if (argc != 3)
+	int cnt = 0;
+	if (argc < 2)
 	{
-		printf("Wrong amount of args: %d; expected 2: server PID and message\n", argc);
+		printf("too few args, need server id\n");
 		exit(1);
 	}
-
+	else if (argc == 2)
+	{
+		pid = atoi(argv[1]);
+		cnt = DEFAULT_CNT;
+	}
+	else if (argc == 3)
+	{
+		pid = atoi(argv[1]);
+		cnt = atoi(argv[2]);
+	}
+	else
+	{
+		printf("too many args");
+		exit(1);
+	}
 	struct sigaction action;
 	action.__sigaction_u.__sa_sigaction = handler;
 	sigemptyset(&action.sa_mask);
 	action.sa_flags = SA_SIGINFO;
 	sigaction(SIGUSR1, &action, NULL);
 
-	int pid = atoi(argv[1]);
-	int pos = 0;
-	int len = strlen(argv[2]);
-	while (pos < (len + 1) * 8)
+	struct timespec start;
+	clock_gettime(CLOCK_REALTIME, &start);
+	int sent = 0;
+	int missed = 0;
+	while(sent < cnt)
 	{
-		int bit = get_bit(argv[2], pos);
-		int signal = SIGUSR1;
-		if (signal % 2 != bit % 2)
-			signal = SIGUSR2;
-		pos += 1;
-		waiting = pid;
-		kill(pid, signal);
+		waiting = 1;
+		kill(pid, SIGUSR1);
 		int wait_count = 0;
 		while(waiting && wait_count < 1000)
 		{
 			usleep(10);
 			wait_count += 1;
 		}
-		if (waiting)
-		{
-			printf("No confirmation from server %d\n", waiting);
-			break;
+		if (waiting) {
+			missed += 1;
 		}
+		sent += 1;
 	}
+	struct timespec end;
+	clock_gettime(CLOCK_REALTIME, &end);
+	double elapsed = (end.tv_sec - start.tv_sec) * 1000000000 + (end.tv_nsec - start.tv_nsec);
+	printf("elapsed for %d: %.3f\n", sent, elapsed / 1000000000);
+	printf("missed: %d\n", missed);
 }

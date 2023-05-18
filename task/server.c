@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/17 22:51:11 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/18 20:22:50 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/18 21:05:32 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ int main()
 	add_handler(SIGUSR2, SIGUSR1);
 	int sent_back = 0;
 	int wait_cnt = 0;
-	int pos = 0;
+	t_bitstring bitstring = bitstring_create_empty();
 	while(1) {
 		usleep(50);
 		int message = g_message;
@@ -62,17 +62,17 @@ int main()
 		}
 		if (get_signal(message))
 		{
-			pos += 1;
+			bitstring_append_bit(&bitstring, signal % 2);
 			g_message = encode_message(client_pid, 0);
 			wait_cnt = 0;
 			kill(client_pid, SIGUSR1);
 		}
-		if (is_finished(pos))
+		if (bitstring_is_finished(&bitstring))
 		{
-			printf("got %d bits from %d\n", pos, client_pid);
-			pos = 0;
+			printf("%s\n", bitstring.data);
 			g_message = 0;
 			wait_cnt = 0;
+			bitstring_reset(&bitstring);
 		}
 		if (get_sender(message))
 			wait_cnt += 1;
@@ -80,7 +80,7 @@ int main()
 		{
 			int client_pid = get_sender(message);
 			printf("disconnecting from %d\n", client_pid);
-			pos = 0;
+			bitstring_reset(&bitstring);
 			g_message = 0;
 			wait_cnt = 0;
 		}
