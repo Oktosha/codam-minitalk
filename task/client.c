@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/18 21:06:37 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/19 17:46:32 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/19 17:56:29 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,7 @@ static void	handle_possible_error(int status)
 	{
 		print(STDERR_FILENO, "Timeout on waiting for confirmation\n");
 		print(STDERR_FILENO, "server with pid = %d haven't sent any\n", status);
+		print(STDERR_FILENO, "Is server even running? Is the pid correct?\n");
 		exit(1);
 	}
 	if (status == STATUS_SERVER_WARNING)

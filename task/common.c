@@ -6,11 +6,12 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/19 17:08:43 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/19 17:11:10 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/19 18:49:49 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "common.h"
 
