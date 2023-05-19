@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/17 21:41:57 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/18 21:06:43 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/19 15:12:37 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ int main(int argc, char**argv)
 	while(sent < cnt)
 	{
 		waiting = 1;
-		kill(pid, SIGUSR1);
+		kill(pid, SIGUSR2);
 		int wait_count = 0;
 		while(waiting && wait_count < 1000)
 		{
