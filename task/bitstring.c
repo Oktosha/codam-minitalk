@@ -6,15 +6,24 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/18 20:34:18 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/19 16:32:13 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/19 16:44:08 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "sanity_check.h"
 #include "server.h"
+
+void	*malloc_wrapper(size_t size)
+{
+	static int cnt = 0;
+
+	cnt += 1;
+	if (cnt % 5)
+		return malloc(size);
+	return NULL;
+}
 
 int	bitstring_is_finished(t_bitstring *bitstring)
 {
@@ -38,7 +47,7 @@ static int bitstring_increase_capacity(t_bitstring *bitstring)
 	new_capacity = BITSTRING_FALLBACK_DATA_SIZE * 2;
 	if (bitstring->char_capacity * 2 > new_capacity)
 		new_capacity = bitstring->char_capacity * 2;
-	new_data = malloc(sizeof(char) * new_capacity);
+	new_data = malloc_wrapper(sizeof(char) * new_capacity);
 	if (!new_data)
 		return (0);
 	i = -1;

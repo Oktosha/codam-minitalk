@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/17 22:51:11 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/19 16:05:51 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/19 17:02:04 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "common.h"
 #include "server.h"
 
 volatile sig_atomic_t	g_message = 0;
 
-static void	handler(int sig, siginfo_t *info, void *uap)
+static void	server_sigusr_handler(int sig, siginfo_t *info, void *uap)
 {
 	if (!is_error(g_message) \
 		&& (is_clear(g_message) \
@@ -29,19 +30,6 @@ static void	handler(int sig, siginfo_t *info, void *uap)
 		g_message = -1;
 }
 
-static void add_handlers(void)
-{
-	struct sigaction	action;
-
-	action.__sigaction_u.__sa_sigaction = handler;
-	sigemptyset(&(action.sa_mask));
-	sigaddset(&(action.sa_mask), SIGUSR1);
-	sigaddset(&(action.sa_mask), SIGUSR2);
-	action.sa_flags = SA_SIGINFO;
-	sigaction(SIGUSR1, &action, NULL);
-	sigaction(SIGUSR2, &action, NULL);
-}
-
 int main()
 {
 	int			wait_cnt;
@@ -49,7 +37,7 @@ int main()
 	t_bitstring	bitstring;
 
 	printf("%d\n", getpid());
-	add_handlers();
+	add_sigusr_handler(server_sigusr_handler);
 	wait_cnt = 0;
 	bitstring = bitstring_create_empty();
 	message = g_message;

@@ -6,27 +6,45 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/18 21:06:37 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/18 21:26:28 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/19 17:46:32 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
-volatile sig_atomic_t waiting = 0;
+#include "common.h"
+#include "parse_client_args.h"
+#include "print.h"
 
-void handler(int signal, siginfo_t *info, void *uap)
+#define STATUS_GOT_CONFIRMATION 0
+#define STATUS_SERVER_WARNING -1
+#define STATUS_MIXED_SIGNALS -42
+
+volatile sig_atomic_t	g_status = 0;
+
+static void	client_sigusr_handler(int signal, siginfo_t *info, void *uap)
 {
-	if (waiting == info->si_pid)
-		waiting = 0;
+	(void) uap;
+	if (g_status == info->si_pid)
+	{
+		if (signal == SIGNAL_SERVER_CONFIRM)
+		{
+			g_status = STATUS_GOT_CONFIRMATION;
+		}
+		else if (signal == SIGNAL_SERVER_WARNING)
+		{
+			g_status = STATUS_SERVER_WARNING;
+		}
+	}
 	else
-		waiting = -1;
+	{
+		g_status = STATUS_MIXED_SIGNALS;
+	}
 }
 
-int get_bit(const char *data, int bit_pos)
+static int	get_bit_at(const char *data, int bit_pos)
 {
 	char	byte;
 	int		bit;
@@ -37,42 +55,56 @@ int get_bit(const char *data, int bit_pos)
 	return (bit);
 }
 
-int main(int argc, char**argv)
+static void	handle_possible_error(int status)
 {
-	if (argc != 3)
+	if (status > 0)
 	{
-		printf("Wrong amount of args: %d; expected 2: server PID and message\n", argc);
+		print(STDERR_FILENO, "Timeout on waiting for confirmation\n");
+		print(STDERR_FILENO, "server with pid = %d haven't sent any\n", status);
 		exit(1);
 	}
-
-	struct sigaction action;
-	action.__sigaction_u.__sa_sigaction = handler;
-	sigemptyset(&action.sa_mask);
-	action.sa_flags = SA_SIGINFO;
-	sigaction(SIGUSR1, &action, NULL);
-
-	int pid = atoi(argv[1]);
-	int pos = 0;
-	int len = strlen(argv[2]);
-	while (pos < (len + 1) * 8)
+	if (status == STATUS_SERVER_WARNING)
 	{
-		int bit = get_bit(argv[2], pos);
-		int signal = SIGUSR1;
-		if (signal % 2 != bit % 2)
-			signal = SIGUSR2;
-		pos += 1;
-		waiting = pid;
-		kill(pid, signal);
-		int wait_count = 0;
-		while(waiting && wait_count < 1000)
+		print(STDERR_FILENO, "Server warns: message doesn't fit memory\n");
+		print(STDERR_FILENO, "Ignoring the warning and continuing\n");
+		g_status = 0;
+	}
+	if (status == STATUS_MIXED_SIGNALS)
+	{
+		print(STDERR_FILENO, "Got unexpected signal\n");
+		print(STDERR_FILENO, "Either server confirming twice\n");
+		print(STDERR_FILENO, "Or non-server process interfering\n");
+		exit(2);
+	}
+	if (status < 0)
+	{
+		print(STDERR_FILENO, "Unknown status; something is really wrong\n");
+		exit(5);
+	}
+}
+
+int	main(int argc, char**argv)
+{
+	t_client_args	args;
+	int				bit_pos;
+	int				wait_count;
+	int				signal;
+
+	args = failfast_parse_args(argc, argv);
+	add_sigusr_handler(client_sigusr_handler);
+	bit_pos = 0;
+	while (bit_pos < args.data_bit_length)
+	{
+		signal = bit_to_signal(get_bit_at(args.data, bit_pos));
+		bit_pos += 1;
+		g_status = args.server_pid;
+		kill(args.server_pid, signal);
+		wait_count = 0;
+		while (g_status > 0 && wait_count < 1000)
 		{
 			usleep(10);
 			wait_count += 1;
 		}
-		if (waiting)
-		{
-			printf("No confirmation from server %d\n", waiting);
-			break;
-		}
+		handle_possible_error(g_status);
 	}
 }

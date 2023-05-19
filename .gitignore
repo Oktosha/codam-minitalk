@@ -4,3 +4,4 @@ server
 a.out
 tmp.c
 .vscode
+*.o
