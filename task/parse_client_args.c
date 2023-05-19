@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/19 17:48:42 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/19 18:58:27 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/19 19:00:19 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,7 +104,7 @@ t_client_args	failfast_parse_args(int argc, char **argv)
 		exit(6);
 	}
 	args.data = argv[2];
-	args.data_bit_length = 8 * signed_strlen(argv[2]);
+	args.data_bit_length = 8 * (signed_strlen(argv[2]) + 1);
 	args.server_pid = failfast_parse_pid(argv[1]);
 	return (args);
 }
