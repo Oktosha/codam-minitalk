@@ -6,11 +6,13 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/18 19:21:49 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/18 19:45:26 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/21 01:13:27 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <signal.h>
+
+#include "server_message.h"
 
 sig_atomic_t	encode_message(int pid, int signal)
 {
