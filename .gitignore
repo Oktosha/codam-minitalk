@@ -1,6 +1,9 @@
 .DS_Store
-client
+
 server
+client
+old_client
+
 a.out
 tmp.c
 .vscode

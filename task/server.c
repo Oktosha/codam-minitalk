@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/17 22:51:11 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/21 00:31:12 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/21 01:30:09 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ volatile sig_atomic_t	g_message = 0;
 
 static void	server_sigusr_handler(int sig, siginfo_t *info, void *uap)
 {
+	(void) uap;
 	if (!is_error(g_message) \
 		&& (is_clear(g_message) \
 		|| (get_sender(g_message) == info->si_pid && !get_signal(g_message))))
@@ -60,7 +61,7 @@ static void	print_and_reset(int *message, t_bitstring *bitstring, int *wait_cnt)
 	bitstring_reset(bitstring);
 	g_message = 0;
 	*wait_cnt = 0;
-	message = 0;
+	*message = 0;
 }
 
 static void	server_loop(int *message, t_bitstring *bitstring, int *wait_cnt)
