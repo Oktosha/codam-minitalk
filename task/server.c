@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/17 22:51:11 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/20 23:59:20 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/21 00:31:12 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ static void	save_and_confirm(int message, t_bitstring *bitstring, int *wait_cnt)
 
 	answer = SIGUSR1;
 	bit = signal_to_bit(get_signal(message));
-	if (!bitstring_append_bit(bitstring,  bit))
+	if (!bitstring_append_bit(bitstring, bit))
 	{
 		answer = SIGUSR2;
 		print(STDERR_FILENO, "Warning: can't allocate memory\n");
@@ -63,7 +63,33 @@ static void	print_and_reset(int *message, t_bitstring *bitstring, int *wait_cnt)
 	message = 0;
 }
 
-int main()
+static void	server_loop(int *message, t_bitstring *bitstring, int *wait_cnt)
+{
+	int	sender;
+
+	while (!is_error(*message))
+	{
+		if (get_signal(*message))
+			save_and_confirm(*message, bitstring, wait_cnt);
+		if (bitstring_is_finished(bitstring))
+			print_and_reset(message, bitstring, wait_cnt);
+		if (get_sender(*message))
+			*wait_cnt += 1;
+		if (*wait_cnt > 1000)
+		{
+			sender = get_sender(*message);
+			print(STDERR_FILENO, "Warning: timeout for %d\n", sender);
+			print_and_reset(message, bitstring, wait_cnt);
+		}
+		usleep(50);
+		*message = g_message;
+	}
+	print(STDERR_FILENO, "Error: received mixed signals\n");
+	bitstring_reset(bitstring);
+	exit(EXIT_MIXED_SIGNALS);
+}
+
+int	main(void)
 {
 	int			wait_cnt;
 	int			message;
@@ -74,22 +100,6 @@ int main()
 	wait_cnt = 0;
 	bitstring = bitstring_create_empty();
 	message = g_message;
-	while(!is_error(message))
-	{
-		if (get_signal(message))
-			save_and_confirm(message, &bitstring, &wait_cnt);
-		if (bitstring_is_finished(&bitstring))
-			print_and_reset(&message, &bitstring, &wait_cnt);
-		if (get_sender(message))
-			wait_cnt += 1;
-		if (wait_cnt > 1000)
-		{
-			print(STDERR_FILENO, "Warning: timeout for %d\n", get_sender(message));
-			print_and_reset(&message, &bitstring, &wait_cnt);
-		}
-		usleep(50);
-		message = g_message;
-	}
-	print(STDERR_FILENO, "Error: received mixed signals\n");
-	exit(EXIT_MIXED_SIGNALS);
+	server_loop(&message, &bitstring, &wait_cnt);
+	return (0);
 }

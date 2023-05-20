@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/19 17:08:43 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/20 22:18:19 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/21 00:08:21 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 
 #include "common.h"
 
-void add_sigusr_handler(void *handler)
+void	add_sigusr_handler(void *handler)
 {
 	struct sigaction	action;
 

@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/19 17:48:42 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/20 22:19:30 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/21 00:26:36 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
 #include "print.h"
 #include "signed_strlen.h"
 
-# define USAGE_EXAMPLE "usage: ./client server_pid message\n"
+#define USAGE_EXAMPLE "Usage: ./client server_pid message\n"
 
 static int	is_decimal_digits(char *s)
 {
@@ -55,7 +55,7 @@ static int	is_bigger_than_intmax(char *s)
 	return (0);
 }
 
-static int extract_int_from_clean_string(char *s)
+static int	extract_int_from_clean_string(char *s)
 {
 	int	ans;
 
@@ -100,7 +100,7 @@ t_client_args	failfast_parse_args(int argc, char **argv)
 
 	if (argc != 3)
 	{
-		print(STDERR_FILENO, "Error: argc = %d\n", argc);
+		print(STDERR_FILENO, "Error: argc = %d; ", argc);
 		print(STDERR_FILENO, "argc should be = 3\n");
 		print(STDERR_FILENO, USAGE_EXAMPLE);
 		exit(EXIT_WRONG_ARGS);

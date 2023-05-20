@@ -1,36 +1,24 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   bitstring.c                                        :+:    :+:            */
+/*   bitstring_a.c                                      :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/18 20:34:18 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/21 00:00:53 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/21 00:23:53 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stddef.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "bitstring.h"
 
 #include "memory.h"
 #include "print.h"
 
-int	bitstring_is_finished(t_bitstring *bitstring)
-{
-	char	*data;
-
-	if (bitstring->data)
-		data = bitstring->data;
-	else
-		data = bitstring->fallback_data;
-	return ((bitstring->bit_length > 0) && (bitstring->bit_length % 8 == 0) \
-		&& (data[(bitstring->bit_length / 8) - 1] == 0));
-}
-
-static int bitstring_increase_capacity(t_bitstring *bitstring)
+static int	bitstring_increase_capacity(t_bitstring *bitstring)
 {
 	int		i;
 	int		new_capacity;
@@ -87,35 +75,34 @@ t_bitstring	bitstring_create_empty(void)
 	bitstring.bit_length = 0;
 	bitstring.char_capacity = BITSTRING_FALLBACK_DATA_SIZE;
 	bitstring.data = NULL;
-	return(bitstring);
+	return (bitstring);
 }
 
-void	bitstring_reset(t_bitstring *bitstring)
+int	bitstring_is_finished(t_bitstring *bitstring)
 {
-	bitstring_soft_reset(bitstring);
-	free(bitstring->data);
-	bitstring->data = NULL;
-	bitstring->char_capacity = BITSTRING_FALLBACK_DATA_SIZE;
-}
-
-void	bitstring_soft_reset(t_bitstring *bitstring)
-{
-	int	i;
+	char	*data;
 
 	if (bitstring->data)
+		data = bitstring->data;
+	else
+		data = bitstring->fallback_data;
+	return ((bitstring->bit_length > 0) && (bitstring->bit_length % 8 == 0) \
+		&& (data[(bitstring->bit_length / 8) - 1] == 0));
+}
+
+void	bitstring_print(t_bitstring *bitstring)
+{
+	char	*data;
+
+	if (bitstring->data)
+		data = bitstring->data;
+	else
+		data = bitstring->fallback_data;
+	write(STDOUT_FILENO, data, bitstring->bit_length / 8);
+	if (bitstring->bit_length % 8)
 	{
-		i = 0;
-		while (i < bitstring->char_capacity)
-		{
-			bitstring->data[i] = 0;
-			i += 1;
-		}
+		print(STDERR_FILENO, "Warning: attempt to print bitstring");
+		print(STDERR_FILENO, " holding non-whole amount of bytes\nlast ");
+		print(STDERR_FILENO, "%d bits ommitted \n", bitstring->bit_length % 8);
 	}
-	i = 0;
-	while (i < BITSTRING_FALLBACK_DATA_SIZE)
-	{
-		bitstring->fallback_data[i] = 0;
-		i += 1;
-	}
-	bitstring->bit_length = 0;
 }
