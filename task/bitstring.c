@@ -6,24 +6,17 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/18 20:34:18 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/19 16:44:08 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/21 00:00:53 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "server.h"
+#include "bitstring.h"
 
-void	*malloc_wrapper(size_t size)
-{
-	static int cnt = 0;
-
-	cnt += 1;
-	if (cnt % 5)
-		return malloc(size);
-	return NULL;
-}
+#include "memory.h"
+#include "print.h"
 
 int	bitstring_is_finished(t_bitstring *bitstring)
 {
@@ -109,11 +102,14 @@ void	bitstring_soft_reset(t_bitstring *bitstring)
 {
 	int	i;
 
-	i = 0;
-	while (i < bitstring->char_capacity)
+	if (bitstring->data)
 	{
-		bitstring->data[i] = 0;
-		i += 1;
+		i = 0;
+		while (i < bitstring->char_capacity)
+		{
+			bitstring->data[i] = 0;
+			i += 1;
+		}
 	}
 	i = 0;
 	while (i < BITSTRING_FALLBACK_DATA_SIZE)

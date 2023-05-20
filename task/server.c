@@ -6,17 +6,20 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/17 22:51:11 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/19 17:02:04 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/20 23:59:20 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
+#include "bitstring.h"
 #include "common.h"
-#include "server.h"
+#include "print.h"
+#include "server_message.h"
 
 volatile sig_atomic_t	g_message = 0;
 
@@ -30,56 +33,63 @@ static void	server_sigusr_handler(int sig, siginfo_t *info, void *uap)
 		g_message = -1;
 }
 
+static void	save_and_confirm(int message, t_bitstring *bitstring, int *wait_cnt)
+{
+	int	answer;
+	int	bit;
+
+	answer = SIGUSR1;
+	bit = signal_to_bit(get_signal(message));
+	if (!bitstring_append_bit(bitstring,  bit))
+	{
+		answer = SIGUSR2;
+		print(STDERR_FILENO, "Warning: can't allocate memory\n");
+		bitstring_print(bitstring);
+		bitstring_soft_reset(bitstring);
+		bitstring_append_bit(bitstring, bit);
+	}
+	g_message = encode_message(get_sender(message), 0);
+	*wait_cnt = 0;
+	kill(get_sender(message), answer);
+}
+
+static void	print_and_reset(int *message, t_bitstring *bitstring, int *wait_cnt)
+{
+	bitstring_print(bitstring);
+	print(STDOUT_FILENO, "\n");
+	bitstring_reset(bitstring);
+	g_message = 0;
+	*wait_cnt = 0;
+	message = 0;
+}
+
 int main()
 {
 	int			wait_cnt;
 	int			message;
 	t_bitstring	bitstring;
 
-	printf("%d\n", getpid());
+	print(STDOUT_FILENO, "%d\n", getpid());
 	add_sigusr_handler(server_sigusr_handler);
 	wait_cnt = 0;
 	bitstring = bitstring_create_empty();
 	message = g_message;
-	int mem_status = 1;
-	while(!is_error(message)) {
+	while(!is_error(message))
+	{
 		if (get_signal(message))
-		{
-			int answer = SIGUSR1;
-			mem_status = bitstring_append_bit(&bitstring, get_signal(message) % 2);
-			if (!mem_status)
-			{
-				answer = SIGUSR2;
-				printf("couldn't allocate more mem for the message\n");
-				printf("message is %d bits so far\n", bitstring.bit_length);
-				printf("writing so far received bytes to the stdout\n");
-				// TODO : print partial message
-				printf("storing the new bytes over the old bytes\n");
-				bitstring_soft_reset(&bitstring);
-				bitstring_append_bit(&bitstring, get_signal(message) % 2);
-			}
-			g_message = encode_message(get_sender(message), 0);
-			wait_cnt = 0;
-			kill(get_sender(message), answer);
-		}
+			save_and_confirm(message, &bitstring, &wait_cnt);
 		if (bitstring_is_finished(&bitstring))
-		{
-			printf("%s\n", bitstring.data);
-			bitstring_reset(&bitstring);
-			g_message = 0;
-			wait_cnt = 0;
-		}
+			print_and_reset(&message, &bitstring, &wait_cnt);
 		if (get_sender(message))
 			wait_cnt += 1;
 		if (wait_cnt > 1000)
 		{
-			printf("timeout for %d\n", get_sender(message));
-			bitstring_reset(&bitstring);
-			g_message = 0;
-			wait_cnt = 0;
+			print(STDERR_FILENO, "Warning: timeout for %d\n", get_sender(message));
+			print_and_reset(&message, &bitstring, &wait_cnt);
 		}
 		usleep(50);
 		message = g_message;
 	}
-	printf("Error occured: either a client doesn't follow the protocol or 2 clients tried to connect\n");
+	print(STDERR_FILENO, "Error: received mixed signals\n");
+	exit(EXIT_MIXED_SIGNALS);
 }

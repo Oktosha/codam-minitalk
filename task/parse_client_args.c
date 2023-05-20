@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/19 17:48:42 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/19 19:00:19 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/20 22:19:30 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 #include "parse_client_args.h"
 
+#include "common.h"
 #include "print.h"
 #include "signed_strlen.h"
 
@@ -71,23 +72,24 @@ static int	failfast_parse_pid(char *s)
 {
 	if (signed_strlen(s) == 0)
 	{
-		print(STDERR_FILENO, "pid arg is empty string\n%s", USAGE_EXAMPLE);
-		exit(7);
+		print(STDERR_FILENO, "Error: pid is empty string\n%s", USAGE_EXAMPLE);
+		exit(EXIT_WRONG_ARGS);
 	}
 	if (!is_decimal_digits(s))
 	{
-		print(STDERR_FILENO, "pid arg '%s' contains non-digits; ", s);
-		print(STDERR_FILENO, "'+' and whitespace arn't allowed, too\n");
+		print(STDERR_FILENO, "Error: pid arg '%s' contains non-digits\n", s);
+		print(STDERR_FILENO, "'+' and whitespace aren't allowed, too\n");
+		print(STDERR_FILENO, "'-' isn't allowed because pids are positive\n");
 		print(STDERR_FILENO, USAGE_EXAMPLE);
-		exit(8);
+		exit(EXIT_WRONG_ARGS);
 	}
 	if ((s[0] == '0') && (s[1] != '\0'))
-		print(STDERR_FILENO, "Leading zeroes? Ignoring them judgementally\n");
+		print(STDERR_FILENO, "Warning: ignoring leading zeroes\n");
 	if (is_bigger_than_intmax(s))
 	{
-		print(STDERR_FILENO, "pid = %s > INT_MAX: it's not a valid pid\n");
+		print(STDERR_FILENO, "Error: pid = %s > INT_MAX, not a valid pid\n", s);
 		print(STDERR_FILENO, USAGE_EXAMPLE);
-		exit(9);
+		exit(EXIT_WRONG_ARGS);
 	}
 	return (extract_int_from_clean_string(s));
 }
@@ -98,10 +100,10 @@ t_client_args	failfast_parse_args(int argc, char **argv)
 
 	if (argc != 3)
 	{
-		print(STDERR_FILENO, "argc = %d\n");
+		print(STDERR_FILENO, "Error: argc = %d\n", argc);
 		print(STDERR_FILENO, "argc should be = 3\n");
 		print(STDERR_FILENO, USAGE_EXAMPLE);
-		exit(6);
+		exit(EXIT_WRONG_ARGS);
 	}
 	args.data = argv[2];
 	args.data_bit_length = 8 * (signed_strlen(argv[2]) + 1);

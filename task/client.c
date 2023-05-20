@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/18 21:06:37 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/19 17:56:29 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/20 22:20:25 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,14 +59,14 @@ static void	handle_possible_error(int status)
 {
 	if (status > 0)
 	{
-		print(STDERR_FILENO, "Timeout on waiting for confirmation\n");
-		print(STDERR_FILENO, "server with pid = %d haven't sent any\n", status);
+		print(STDERR_FILENO, "Error: imeout on waiting for confirmation\n");
+		print(STDERR_FILENO, "server with pid = %d doesn't respond\n", status);
 		print(STDERR_FILENO, "Is server even running? Is the pid correct?\n");
-		exit(1);
+		exit(EXIT_TIMEOUT);
 	}
 	if (status == STATUS_SERVER_WARNING)
 	{
-		print(STDERR_FILENO, "Server warns: message doesn't fit memory\n");
+		print(STDERR_FILENO, "Warning: message doesn't server's fit memory\n");
 		print(STDERR_FILENO, "Ignoring the warning and continuing\n");
 		g_status = 0;
 	}
@@ -75,12 +75,12 @@ static void	handle_possible_error(int status)
 		print(STDERR_FILENO, "Got unexpected signal\n");
 		print(STDERR_FILENO, "Either server confirming twice\n");
 		print(STDERR_FILENO, "Or non-server process interfering\n");
-		exit(2);
+		exit(EXIT_MIXED_SIGNALS);
 	}
 	if (status < 0)
 	{
 		print(STDERR_FILENO, "Unknown status; something is really wrong\n");
-		exit(5);
+		exit(EXIT_LOST_INTEGRITY);
 	}
 }
 
@@ -108,4 +108,5 @@ int	main(int argc, char**argv)
 		}
 		handle_possible_error(g_status);
 	}
+	return (0);
 }

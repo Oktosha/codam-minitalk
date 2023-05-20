@@ -1,30 +1,27 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   common.h                                           :+:    :+:            */
+/*   memory.c                                           :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
-/*   Created: 2023/05/19 16:48:02 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/20 22:17:00 by dkolodze      ########   odam.nl         */
+/*   Created: 2023/05/20 22:32:19 by dkolodze      #+#    #+#                 */
+/*   Updated: 2023/05/20 23:57:06 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef COMMON_H
-# define COMMON_H
+#include <stdlib.h>
 
-# include <signal.h>
+#include "memory.h"
 
-# define SIGNAL_SERVER_CONFIRM SIGUSR1
-# define SIGNAL_SERVER_WARNING SIGUSR2
+#define MALLOC_FAILURE_CNT 0
 
-# define EXIT_LOST_INTEGRITY -1
-# define EXIT_TIMEOUT 1
-# define EXIT_MIXED_SIGNALS 2
-# define EXIT_WRONG_ARGS 3
+void	*malloc_wrapper(int size)
+{
+	static int cnt = 0;
 
-void	add_sigusr_handler(void *handler);
-int		bit_to_signal(int bit);
-int		signal_to_bit(int signal);
-
-#endif
+	cnt += 1;
+	if (MALLOC_FAILURE_CNT && (cnt % MALLOC_FAILURE_CNT == 0))
+		return (NULL);
+	return malloc(size);
+}
