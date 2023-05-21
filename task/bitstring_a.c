@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/18 20:34:18 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/21 00:23:53 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/21 02:20:09 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,7 @@ t_bitstring	bitstring_create_empty(void)
 	bitstring.bit_length = 0;
 	bitstring.char_capacity = BITSTRING_FALLBACK_DATA_SIZE;
 	bitstring.data = NULL;
+	bitstring_soft_reset(&bitstring);
 	return (bitstring);
 }
 
