@@ -6,7 +6,7 @@
 /*   By: dkolodze <dkolodze@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2023/05/18 21:06:37 by dkolodze      #+#    #+#                 */
-/*   Updated: 2023/05/21 01:37:16 by dkolodze      ########   odam.nl         */
+/*   Updated: 2023/05/21 15:23:49 by dkolodze      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,8 @@ static int	get_bit_at(const char *data, int bit_pos)
 
 static void	handle_possible_error(int status)
 {
+	if (status == 0)
+		return ;
 	if (status > 0)
 	{
 		print(STDERR_FILENO, "Error: timeout on waiting for confirmation\n");
@@ -69,6 +71,7 @@ static void	handle_possible_error(int status)
 		print(STDERR_FILENO, "Warning: message doesn't server's fit memory\n");
 		print(STDERR_FILENO, "Ignoring the warning and continuing\n");
 		g_status = 0;
+		return ;
 	}
 	if (status == STATUS_MIXED_SIGNALS)
 	{
@@ -77,11 +80,8 @@ static void	handle_possible_error(int status)
 		print(STDERR_FILENO, "Or non-server process interfering\n");
 		exit(EXIT_MIXED_SIGNALS);
 	}
-	if (status < 0)
-	{
-		print(STDERR_FILENO, "Unknown status; something is really wrong\n");
-		exit(EXIT_LOST_INTEGRITY);
-	}
+	print(STDERR_FILENO, "Unknown status %d; something is wrong\n", status);
+	exit(EXIT_LOST_INTEGRITY);
 }
 
 int	main(int argc, char**argv)
